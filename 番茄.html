@@ -1,0 +1,2195 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>番茄工作法 - 专注与效率工具</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <link href="https://cdn.jsdelivr.net/npm/font-awesome@4.7.0/css/font-awesome.min.css" rel="stylesheet">
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <style>
+        :root {
+            --primary: #B52B2D;
+            --secondary: #10b981;
+            --neutral: #312828;
+            --light: #F9F9F5;
+            --dark: #111827;
+            --shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+        }
+        
+        /* 主题变量扩展 */
+        .theme-blue {
+            --primary: #2563eb;
+        }
+        
+        .theme-green {
+            --primary: #16a34a;
+        }
+        
+        .theme-purple {
+            --primary: #7c3aed;
+        }
+        
+        .theme-yellow {
+            --primary: #d97706;
+        }
+        
+        body.dark-mode {
+            --light: #1f2937;
+            --dark: #f9fafb;
+            background-color: #1f2937;
+            color: #f9fafb;
+        }
+        
+        .timer-ring {
+            transition: stroke-dashoffset 1s linear;
+            transform: rotate(-90deg);
+            transform-origin: 50% 50%;
+        }
+        
+        .fade-in {
+            animation: fadeIn 0.5s ease-in-out;
+        }
+        
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+        
+        .task-completed {
+            text-decoration: line-through;
+            opacity: 0.7;
+        }
+        
+        .breathing-animation {
+            animation: breathing 4s ease-in-out infinite;
+        }
+        
+        @keyframes breathing {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+        
+        .slide-up {
+            animation: slideUp 0.3s ease-out;
+        }
+        
+        @keyframes slideUp {
+            from { transform: translateY(10px); opacity: 0; }
+            to { transform: translateY(0); opacity: 1; }
+        }
+        
+        .pulse {
+            animation: pulse 2s infinite;
+        }
+        
+        @keyframes pulse {
+            0% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+            100% { transform: scale(1); }
+        }
+        
+        .music-player {
+            transition: all 0.3s ease;
+        }
+        
+        .reward-item {
+            transition: all 0.3s ease;
+            cursor: pointer;
+        }
+        
+        .reward-item:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 25px -5px rgba(0, 0, 0, 0.1);
+        }
+        
+        .reward-item.locked {
+            filter: grayscale(100%);
+            opacity: 0.7;
+        }
+        
+        .reward-item.unlocked {
+            filter: none;
+            opacity: 1;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar {
+            width: 6px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-track {
+            background: #f1f1f1;
+            border-radius: 10px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-thumb {
+            background: #888;
+            border-radius: 10px;
+        }
+        
+        .custom-scrollbar::-webkit-scrollbar-thumb:hover {
+            background: #555;
+        }
+        
+        .card-hover {
+            transition: transform 0.2s, box-shadow 0.2s;
+        }
+        
+        .card-hover:hover {
+            transform: translateY(-2px);
+            box-shadow: var(--shadow);
+        }
+        
+        .import-preview {
+            max-height: 200px;
+            object-fit: contain;
+        }
+    </style>
+</head>
+<body class="bg-light min-h-screen font-sans transition-colors duration-300">
+    <!-- 顶部导航栏 -->
+    <header class="bg-white shadow-sm py-3 px-4 flex justify-between items-center dark:bg-gray-800 dark:text-white sticky top-0 z-40 transition-all duration-300">
+        <div class="flex items-center space-x-2">
+            <i class="fa fa-leaf text-primary text-xl"></i>
+            <h1 class="text-xl font-bold">番茄工作法</h1>
+        </div>
+        <div class="flex items-center space-x-4">
+            <!-- 音乐播放器 -->
+            <div id="music-player" class="music-player flex items-center space-x-2 bg-gray-100 dark:bg-gray-700 rounded-full px-3 py-1 hidden md:flex">
+                <button id="music-toggle" class="text-gray-700 dark:text-gray-300 hover:text-primary transition-colors">
+                    <i class="fa fa-play"></i>
+                </button>
+                <span id="music-title" class="text-sm hidden sm:inline">轻音乐1</span>
+                <div class="w-20 sm:w-32 bg-gray-300 dark:bg-gray-600 rounded-full h-1">
+                    <div id="music-progress" class="bg-primary h-1 rounded-full" style="width: 0%"></div>
+                </div>
+                <button id="music-prev" class="text-gray-700 dark:text-gray-300 hover:text-primary transition-colors">
+                    <i class="fa fa-backward"></i>
+                </button>
+                <button id="music-next" class="text-gray-700 dark:text-gray-300 hover:text-primary transition-colors">
+                    <i class="fa fa-forward"></i>
+                </button>
+                <button id="music-import" class="text-gray-700 dark:text-gray-300 hover:text-primary transition-colors">
+                    <i class="fa fa-upload"></i>
+                </button>
+            </div>
+            
+            <button id="theme-toggle" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                <i class="fa fa-moon-o"></i>
+            </button>
+            <button id="analytics-btn" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                <i class="fa fa-bar-chart"></i>
+            </button>
+            <button id="settings-btn" class="p-2 rounded-full hover:bg-gray-100 dark:hover:bg-gray-700 transition-colors">
+                <i class="fa fa-cog"></i>
+            </button>
+        </div>
+    </header>
+
+    <div class="container mx-auto px-4 py-6 max-w-6xl">
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- 左侧面板 -->
+            <div class="lg:col-span-2 space-y-6">
+                <!-- 任务管理 -->
+                <div class="bg-white rounded-xl shadow-sm p-5 dark:bg-gray-800 dark:text-white slide-up card-hover">
+                    <div class="flex justify-between items-center mb-4">
+                        <h2 class="text-xl font-bold">今日任务</h2>
+                        <button id="add-task-btn" class="px-4 py-2 bg-primary text-white rounded-full hover:bg-primary/90 transition-colors shadow-sm">
+                            <i class="fa fa-plus mr-1"></i> 添加任务
+                        </button>
+                    </div>
+                    
+                    <div class="mb-4">
+                        <div class="flex">
+                            <input type="text" id="task-input" placeholder="输入新任务..." 
+                                   class="flex-1 px-4 py-3 border border-gray-300 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-primary/50 dark:bg-gray-700 dark:border-gray-600 transition-all">
+                            <button id="task-submit" class="px-6 py-3 bg-primary text-white rounded-r-lg hover:bg-primary/90 transition-colors shadow-sm">
+                                添加
+                            </button>
+                        </div>
+                    </div>
+                    
+                    <div id="task-list" class="space-y-3 max-h-80 overflow-y-auto custom-scrollbar">
+                        <p class="text-gray-500 text-center py-4 dark:text-gray-400">暂无任务，添加一个吧！</p>
+                    </div>
+                    
+                    <div class="mt-4 pt-4 border-t border-gray-200 dark:border-gray-700 flex justify-between text-sm">
+                        <span id="task-count">0 个任务</span>
+                        <button id="clear-completed" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors">
+                            清除已完成
+                        </button>
+                    </div>
+                </div>
+                
+                <!-- 计时器 -->
+                <div class="bg-white rounded-xl shadow-sm p-5 dark:bg-gray-800 dark:text-white slide-up card-hover">
+                    <div class="flex flex-col items-center">
+                        <!-- 模式切换 -->
+                        <div class="flex justify-center mb-6 w-full">
+                            <div class="inline-flex rounded-full shadow-sm bg-gray-100 dark:bg-gray-700 p-1" role="group">
+                                <button id="work-mode" class="px-6 py-2 text-sm font-medium bg-primary text-white rounded-full transition-all">
+                                    工作模式
+                                </button>
+                                <button id="break-mode" class="px-6 py-2 text-sm font-medium text-gray-700 dark:text-gray-300 rounded-full hover:bg-gray-200 dark:hover:bg-gray-600 transition-all">
+                                    休息模式
+                                </button>
+                            </div>
+                        </div>
+                        
+                        <!-- 计时器容器 -->
+                        <div class="timer-container relative mb-6 w-64 h-64">
+                            <!-- SVG 圆环 -->
+                            <svg class="w-full h-full" viewBox="0 0 100 100">
+                                <!-- 背景圆环 -->
+                                <circle cx="50" cy="50" r="45" fill="none" stroke="#e5e7eb" stroke-width="4"></circle>
+                                <!-- 进度圆环 -->
+                                <circle id="timer-ring" class="timer-ring" cx="50" cy="50" r="45" fill="none" stroke="var(--primary)" stroke-width="4" stroke-dasharray="282.74" stroke-dashoffset="0"></circle>
+                            </svg>
+                            
+                            <!-- 计时器显示 -->
+                            <div class="absolute inset-0 flex flex-col items-center justify-center">
+                                <span id="timer-display" class="text-5xl font-bold text-gray-800 dark:text-white mb-2">25:00</span>
+                                <span id="timer-status" class="text-gray-500 dark:text-gray-400">准备开始工作</span>
+                            </div>
+                        </div>
+                        
+                        <!-- 控制按钮 -->
+                        <div class="flex flex-wrap justify-center gap-4 mb-6">
+                            <button id="start-btn" class="px-6 py-3 bg-primary text-white rounded-full hover:bg-primary/90 transition-all flex items-center shadow-md">
+                                <i class="fa fa-play mr-2"></i> 开始
+                            </button>
+                            <button id="reset-btn" class="px-6 py-3 bg-gray-200 text-gray-800 rounded-full hover:bg-gray-300 transition-all flex items-center shadow-sm dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600">
+                                <i class="fa fa-refresh mr-2"></i> 重置
+                            </button>
+                            <button id="fullscreen-btn" class="px-6 py-3 bg-gray-200 text-gray-800 rounded-full hover:bg-gray-300 transition-all flex items-center shadow-sm dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600">
+                                <i class="fa fa-expand mr-2"></i> 专注模式
+                            </button>
+                        </div>
+                        
+                        <!-- 打断记录 -->
+                        <div class="w-full bg-gray-50 rounded-lg p-4 dark:bg-gray-700">
+                            <h3 class="text-md font-medium mb-3">打断记录</h3>
+                            <div class="flex flex-wrap gap-2 mb-3">
+                                <button class="interruption-reason px-3 py-1 bg-white border border-gray-300 rounded-full text-sm hover:bg-gray-50 dark:bg-gray-600 dark:border-gray-500 dark:text-white transition-colors" data-reason="电话">电话</button>
+                                <button class="interruption-reason px-3 py-1 bg-white border border-gray-300 rounded-full text-sm hover:bg-gray-50 dark:bg-gray-600 dark:border-gray-500 dark:text-white transition-colors" data-reason="消息">消息</button>
+                                <button class="interruption-reason px-3 py-1 bg-white border border-gray-300 rounded-full text-sm hover:bg-gray-50 dark:bg-gray-600 dark:border-gray-500 dark:text-white transition-colors" data-reason="分心">分心</button>
+                                <button class="interruption-reason px-3 py-1 bg-white border border-gray-300 rounded-full text-sm hover:bg-gray-50 dark:bg-gray-600 dark:border-gray-500 dark:text-white transition-colors" data-reason="休息">休息</button>
+                                <button class="interruption-reason px-3 py-1 bg-white border border-gray-300 rounded-full text-sm hover:bg-gray-50 dark:bg-gray-600 dark:border-gray-500 dark:text-white transition-colors" data-reason="其他">其他</button>
+                            </div>
+                            <div id="interruption-list" class="text-sm text-gray-600 dark:text-gray-400">
+                                <p class="text-gray-500 text-center py-2 dark:text-gray-400">暂无打断记录</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 媒体导入区域 -->
+                <div class="bg-white rounded-xl shadow-sm p-5 dark:bg-gray-800 dark:text-white slide-up card-hover">
+                    <h2 class="text-xl font-bold mb-4">媒体资源</h2>
+                    <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        <div>
+                            <h3 class="text-lg font-medium mb-2">导入文件</h3>
+                            <label class="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 dark:bg-gray-700 dark:border-gray-600 transition-colors">
+                                <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                                    <i class="fa fa-cloud-upload text-2xl text-gray-400 mb-2"></i>
+                                    <p class="mb-1 text-sm text-gray-500 dark:text-gray-400"><span class="font-semibold">点击上传</span> 或拖放文件</p>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400">支持 PDF, DOC, TXT 等格式</p>
+                                </div>
+                                <input id="file-import" type="file" class="hidden" multiple accept=".pdf,.doc,.docx,.txt,.xls,.xlsx"/>
+                            </label>
+                            <div id="file-preview" class="mt-3 max-h-40 overflow-y-auto custom-scrollbar space-y-2">
+                                <!-- 文件预览将在这里显示 -->
+                            </div>
+                        </div>
+                        <div>
+                            <h3 class="text-lg font-medium mb-2">导入视频</h3>
+                            <label class="flex flex-col items-center justify-center w-full h-32 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 dark:bg-gray-700 dark:border-gray-600 transition-colors">
+                                <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                                    <i class="fa fa-film text-2xl text-gray-400 mb-2"></i>
+                                    <p class="mb-1 text-sm text-gray-500 dark:text-gray-400"><span class="font-semibold">点击上传</span> 或拖放视频</p>
+                                    <p class="text-xs text-gray-500 dark:text-gray-400">支持 MP4, WebM 等格式</p>
+                                </div>
+                                <input id="video-import" type="file" class="hidden" multiple accept=".mp4,.webm,.mov"/>
+                            </label>
+                            <div id="video-preview" class="mt-3 max-h-40 overflow-y-auto custom-scrollbar space-y-2">
+                                <!-- 视频预览将在这里显示 -->
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 呼吸练习 -->
+                <div id="breathing-exercise" class="bg-white rounded-xl shadow-sm p-5 hidden dark:bg-gray-800 dark:text-white slide-up card-hover">
+                    <div class="flex flex-col items-center">
+                        <h2 class="text-xl font-bold mb-4">呼吸放松练习</h2>
+                        <div class="breathing-circle w-40 h-40 bg-secondary rounded-full flex items-center justify-center breathing-animation mb-4">
+                            <span class="text-white text-lg font-medium" id="breath-text">吸气</span>
+                        </div>
+                        <p class="text-gray-600 dark:text-gray-400 text-center mb-4">跟随节奏深呼吸，放松身心</p>
+                        <button id="stop-breathing" class="px-4 py-2 bg-gray-200 text-gray-800 rounded-full hover:bg-gray-300 transition-all dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600">
+                            停止练习
+                        </button>
+                    </div>
+                </div>
+            </div>
+            
+            <!-- 右侧面板 -->
+            <div class="space-y-6">
+                <!-- 统计信息 -->
+                <div class="bg-white rounded-xl shadow-sm p-5 dark:bg-gray-800 dark:text-white slide-up card-hover">
+                    <h2 class="text-xl font-bold mb-4">今日统计</h2>
+                    <div class="grid grid-cols-2 gap-4 mb-4">
+                        <div class="bg-gray-50 rounded-lg p-3 text-center dark:bg-gray-700">
+                            <p class="text-sm text-gray-500 dark:text-gray-400">已完成番茄</p>
+                            <p id="completed-pomodoros" class="text-2xl font-bold">0</p>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg p-3 text-center dark:bg-gray-700">
+                            <p class="text-sm text-gray-500 dark:text-gray-400">专注时间</p>
+                            <p id="focus-time" class="text-2xl font-bold">0分钟</p>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg p-3 text-center dark:bg-gray-700">
+                            <p class="text-sm text-gray-500 dark:text-gray-400">打断次数</p>
+                            <p id="interruption-count" class="text-2xl font-bold">0</p>
+                        </div>
+                        <div class="bg-gray-50 rounded-lg p-3 text-center dark:bg-gray-700">
+                            <p class="text-sm text-gray-500 dark:text-gray-400">番茄积分</p>
+                            <p id="pomodoro-points" class="text-2xl font-bold text-primary">0</p>
+                        </div>
+                    </div>
+                    <button id="rewards-btn" class="w-full px-4 py-2 bg-secondary text-white rounded-lg hover:bg-secondary/90 transition-colors flex items-center justify-center shadow-sm">
+                        <i class="fa fa-gift mr-2"></i> 奖励商店
+                    </button>
+                </div>
+                
+                <!-- 目标设定 -->
+                <div class="bg-white rounded-xl shadow-sm p-5 dark:bg-gray-800 dark:text-white slide-up card-hover">
+                    <h2 class="text-xl font-bold mb-4">今日目标</h2>
+                    <div class="mb-4">
+                        <div class="flex items-center justify-between mb-2">
+                            <span class="text-sm">每日番茄目标</span>
+                            <span id="pomodoro-target-display" class="font-bold">8</span>
+                        </div>
+                        <input type="range" id="pomodoro-target" min="1" max="12" value="8" class="w-full">
+                    </div>
+                    <div class="flex items-center justify-between mb-4">
+                        <span class="text-sm">完成进度</span>
+                        <span id="target-progress" class="font-bold">0/8</span>
+                    </div>
+                    <div class="w-full bg-gray-200 rounded-full h-2.5 dark:bg-gray-700">
+                        <div id="target-progress-bar" class="bg-primary h-2.5 rounded-full transition-all duration-500" style="width: 0%"></div>
+                    </div>
+                </div>
+                
+                <!-- 快捷设置 -->
+                <div class="bg-white rounded-xl shadow-sm p-5 dark:bg-gray-800 dark:text-white slide-up card-hover">
+                    <h2 class="text-xl font-bold mb-4">时间设置</h2>
+                    <div class="grid grid-cols-2 gap-4">
+                        <div>
+                            <label for="work-time" class="block text-sm font-medium mb-1">工作时间 (分钟)</label>
+                            <input type="number" id="work-time" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 dark:bg-gray-700 dark:border-gray-600 transition-all" value="25" min="1" max="60">
+                        </div>
+                        <div>
+                            <label for="break-time" class="block text-sm font-medium mb-1">休息时间 (分钟)</label>
+                            <input type="number" id="break-time" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-primary/50 dark:bg-gray-700 dark:border-gray-600 transition-all" value="5" min="1" max="30">
+                        </div>
+                    </div>
+                </div>
+                
+                <!-- 网站拦截 -->
+                <div class="bg-white rounded-xl shadow-sm p-5 dark:bg-gray-800 dark:text-white slide-up card-hover">
+                    <h2 class="text-xl font-bold mb-4">网站拦截</h2>
+                    <div class="mb-4">
+                        <div class="flex mb-2">
+                            <input type="text" id="website-input" placeholder="输入要拦截的网站域名" 
+                                   class="flex-1 px-4 py-2 border border-gray-300 rounded-l-lg focus:outline-none focus:ring-2 focus:ring-primary/50 dark:bg-gray-700 dark:border-gray-600 transition-all">
+                            <button id="add-website" class="px-4 py-2 bg-primary text-white rounded-r-lg hover:bg-primary/90 transition-colors shadow-sm">
+                                添加
+                            </button>
+                        </div>
+                        <div class="flex items-center mt-2">
+                            <input type="checkbox" id="blocker-active" class="mr-2">
+                            <label for="blocker-active" class="text-sm">专注期间启用网站拦截</label>
+                        </div>
+                    </div>
+                    <div id="blocked-websites" class="space-y-2 max-h-40 overflow-y-auto custom-scrollbar">
+                        <p class="text-gray-500 text-center py-2 dark:text-gray-400">暂无拦截网站</p>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 数据分析模态框 -->
+    <div id="analytics-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-xl shadow-xl p-6 max-w-4xl w-full mx-4 max-h-[90vh] overflow-y-auto dark:bg-gray-800 dark:text-white slide-up">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold">数据分析</h2>
+                <button id="close-analytics" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors">
+                    <i class="fa fa-times text-xl"></i>
+                </button>
+            </div>
+            
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <div class="bg-gray-50 rounded-lg p-4 dark:bg-gray-700">
+                    <h3 class="text-lg font-medium mb-3">本周专注时间</h3>
+                    <canvas id="weekly-chart" height="200"></canvas>
+                </div>
+                <div class="bg-gray-50 rounded-lg p-4 dark:bg-gray-700">
+                    <h3 class="text-lg font-medium mb-3">任务完成情况</h3>
+                    <canvas id="task-chart" height="200"></canvas>
+                </div>
+                <div class="bg-gray-50 rounded-lg p-4 dark:bg-gray-700">
+                    <h3 class="text-lg font-medium mb-3">打断原因分析</h3>
+                    <canvas id="interruption-chart" height="200"></canvas>
+                </div>
+                <div class="bg-gray-50 rounded-lg p-4 dark:bg-gray-700">
+                    <h3 class="text-lg font-medium mb-3">最佳专注时段</h3>
+                    <canvas id="time-chart" height="200"></canvas>
+                </div>
+            </div>
+            
+            <div class="mt-6">
+                <h3 class="text-lg font-medium mb-3">生产力洞察</h3>
+                <div id="insights-container" class="space-y-3">
+                    <div class="flex items-center p-3 bg-gray-50 rounded-lg dark:bg-gray-700">
+                        <i class="fa fa-clock-o text-blue-500 mr-3 text-lg"></i>
+                        <span>您通常在下午2点到6点之间最为专注</span>
+                    </div>
+                    <div class="flex items-center p-3 bg-gray-50 rounded-lg dark:bg-gray-700">
+                        <i class="fa fa-bell-slash text-red-500 mr-3 text-lg"></i>
+                        <span>分心是您最常见的打断原因，尝试关闭通知</span>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 设置模态框 -->
+    <div id="settings-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-xl shadow-xl p-6 max-w-md w-full mx-4 dark:bg-gray-800 dark:text-white slide-up">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold">设置</h2>
+                <button id="close-settings" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors">
+                    <i class="fa fa-times text-xl"></i>
+                </button>
+            </div>
+            
+            <div class="space-y-6">
+                <div>
+                    <h3 class="text-lg font-medium mb-2">通知设置</h3>
+                    <div class="space-y-2">
+                        <div class="flex items-center">
+                            <input type="checkbox" id="sound-notification" class="mr-2" checked>
+                            <label for="sound-notification">声音提醒</label>
+                        </div>
+                        <div class="flex items-center">
+                            <input type="checkbox" id="browser-notification" class="mr-2">
+                            <label for="browser-notification">浏览器通知</label>
+                        </div>
+                    </div>
+                </div>
+                
+                <div>
+                    <h3 class="text-lg font-medium mb-2">音乐设置</h3>
+                    <div class="space-y-3">
+                        <div class="flex items-center">
+                            <input type="checkbox" id="music-enabled" class="mr-2">
+                            <label for="music-enabled">专注时播放背景音乐</label>
+                        </div>
+                        <div class="flex items-center justify-between">
+                            <label for="music-volume" class="text-sm">音乐音量</label>
+                            <input type="range" id="music-volume" min="0" max="100" value="50" class="w-32">
+                        </div>
+                        <div>
+                            <label class="block text-sm font-medium mb-1">我的音乐</label>
+                            <div id="custom-music-list" class="space-y-2 max-h-32 overflow-y-auto custom-scrollbar">
+                                <p class="text-sm text-gray-500 dark:text-gray-400">暂无自定义音乐</p>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+                
+                <div>
+                    <h3 class="text-lg font-medium mb-2">快捷键</h3>
+                    <div class="space-y-1 text-sm">
+                        <div class="flex justify-between">
+                            <span>开始/暂停</span>
+                            <kbd class="px-2 py-1 bg-gray-200 rounded dark:bg-gray-700">空格</kbd>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>重置计时器</span>
+                            <kbd class="px-2 py-1 bg-gray-200 rounded dark:bg-gray-700">R</kbd>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>工作模式</span>
+                            <kbd class="px-2 py-1 bg-gray-200 rounded dark:bg-gray-700">W</kbd>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>休息模式</span>
+                            <kbd class="px-2 py-1 bg-gray-200 rounded dark:bg-gray-700">B</kbd>
+                        </div>
+                    </div>
+                </div>
+                
+                <div>
+                    <h3 class="text-lg font-medium mb-2">数据管理</h3>
+                    <div class="space-y-2">
+                        <button id="export-data" class="w-full px-4 py-2 bg-gray-200 text-gray-800 rounded-lg hover:bg-gray-300 transition-colors dark:bg-gray-700 dark:text-white dark:hover:bg-gray-600">
+                            导出数据
+                        </button>
+                        <button id="reset-data" class="w-full px-4 py-2 bg-red-100 text-red-700 rounded-lg hover:bg-red-200 transition-colors dark:bg-red-900 dark:text-red-200 dark:hover:bg-red-800">
+                            重置所有数据
+                        </button>
+                    </div>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 奖励商店模态框 -->
+    <div id="rewards-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-xl shadow-xl p-6 max-w-4xl w-full mx-4 max-h-[80vh] overflow-y-auto dark:bg-gray-800 dark:text-white slide-up">
+            <div class="flex justify-between items-center mb-6">
+                <h2 class="text-2xl font-bold">番茄奖励商店</h2>
+                <button id="close-rewards" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors">
+                    <i class="fa fa-times text-xl"></i>
+                </button>
+            </div>
+            
+            <div class="mb-6">
+                <div class="flex items-center justify-between bg-gray-100 p-3 rounded-lg dark:bg-gray-700">
+                    <div class="flex items-center">
+                        <i class="fa fa-star text-yellow-500 mr-2"></i>
+                        <span class="text-lg font-medium">我的积分</span>
+                    </div>
+                    <span id="modal-points" class="text-xl font-bold text-primary">0</span>
+                </div>
+            </div>
+            
+            <h3 class="text-lg font-medium mb-3">实物奖励</h3>
+            <div id="items-container" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mb-6">
+                <!-- 物品将通过JavaScript动态添加 -->
+            </div>
+            
+            <h3 class="text-lg font-medium mb-3">美味食物</h3>
+            <div id="food-container" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mb-6">
+                <!-- 食物将通过JavaScript动态添加 -->
+            </div>
+            
+            <h3 class="text-lg font-medium mb-3">主题与界面</h3>
+            <div id="themes-container" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mb-6">
+                <!-- 主题将通过JavaScript动态添加 -->
+            </div>
+            
+            <h3 class="text-lg font-medium mb-3">功能解锁</h3>
+            <div id="features-container" class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-4 mb-6">
+                <!-- 功能将通过JavaScript动态添加 -->
+            </div>
+            
+            <h3 class="text-lg font-medium mb-3">已兑换奖励</h3>
+            <div id="redeemed-container" class="bg-gray-100 p-4 rounded-lg min-h-[100px] dark:bg-gray-700">
+                <p id="no-redeemed" class="text-gray-500 text-center dark:text-gray-400">还没有兑换任何奖励</p>
+                <div id="redeemed-list" class="hidden space-y-2">
+                    <!-- 已兑换的奖励将通过JavaScript动态添加 -->
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- 音乐导入模态框 -->
+    <div id="music-import-modal" class="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 hidden">
+        <div class="bg-white rounded-xl shadow-xl p-6 max-w-md w-full mx-4 dark:bg-gray-800 dark:text-white slide-up">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold">导入音乐</h2>
+                <button id="close-music-import" class="text-gray-500 hover:text-gray-700 dark:text-gray-400 dark:hover:text-gray-200 transition-colors">
+                    <i class="fa fa-times text-xl"></i>
+                </button>
+            </div>
+            
+            <label class="flex flex-col items-center justify-center w-full h-40 border-2 border-dashed border-gray-300 rounded-lg cursor-pointer bg-gray-50 hover:bg-gray-100 dark:bg-gray-700 dark:border-gray-600 transition-colors mb-4">
+                <div class="flex flex-col items-center justify-center pt-5 pb-6">
+                    <i class="fa fa-music text-3xl text-gray-400 mb-2"></i>
+                    <p class="mb-1 text-sm text-gray-500 dark:text-gray-400"><span class="font-semibold">点击上传</span> 或拖放音乐文件</p>
+                    <p class="text-xs text-gray-500 dark:text-gray-400">支持 MP3, WAV, OGG 等格式</p>
+                </div>
+                <input id="custom-music-import" type="file" class="hidden" multiple accept=".mp3,.wav,.ogg,.m4a"/>
+            </label>
+            
+            <div id="music-import-preview" class="mb-4 max-h-40 overflow-y-auto custom-scrollbar">
+                <p class="text-sm text-gray-500 dark:text-gray-400">未选择文件</p>
+            </div>
+            
+            <button id="confirm-music-import" class="w-full px-4 py-2 bg-primary text-white rounded-lg hover:bg-primary/90 transition-colors">
+                确认导入
+            </button>
+        </div>
+    </div>
+
+    <!-- 兑换成功提示 -->
+    <div id="success-toast" class="fixed bottom-4 left-1/2 transform -translate-x-1/2 bg-green-500 text-white px-6 py-3 rounded-lg shadow-lg hidden z-50 fade-in">
+        <div class="flex items-center">
+            <i class="fa fa-check-circle mr-2"></i>
+            <span>兑换成功！</span>
+        </div>
+    </div>
+
+    <!-- 音频元素 -->
+    <audio id="background-music" loop>
+        <source src="https://assets.mixkit.co/music/preview/mixkit-simple-clean-531.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="background-music-2" loop>
+        <source src="https://assets.mixkit.co/music/preview/mixkit-reflecting-ambient-124.mp3" type="audio/mpeg">
+    </audio>
+    <audio id="notification-sound">
+        <source src="https://assets.mixkit.co/sfx/preview/mixkit-software-interface-start-2574.mp3" type="audio/mpeg">
+    </audio>
+
+    <script>
+        // 应用状态和配置
+        const state = {
+            timer: null,
+            isRunning: false,
+            isWorkMode: true,
+            timeLeft: 25 * 60,
+            workTime: 25 * 60,
+            breakTime: 5 * 60,
+            completedPomodoros: 0,
+            focusTime: 0,
+            pomodoroPoints: 0,
+            interruptions: [],
+            tasks: [],
+            blockedWebsites: [],
+            importedFiles: [],
+            importedVideos: [],
+            isBlockerActive: false,
+            dailyTarget: 8,
+            currentStreak: 0,
+            settings: {
+                soundNotification: true,
+                browserNotification: false,
+                darkMode: false,
+                theme: 'default',
+                musicEnabled: false,
+                musicVolume: 50
+            },
+            music: {
+                currentTrack: 0,
+                isPlaying: false,
+                tracks: [
+                    { id: 1, name: '轻音乐1', audio: document.getElementById('background-music'), isCustom: false },
+                    { id: 2, name: '轻音乐2', audio: document.getElementById('background-music-2'), isCustom: false }
+                ]
+            },
+            // 奖励数据 - 提高了难度
+            rewards: {
+                items: [
+                    { id: 1, name: '无线耳机', points: 1500, image: 'https://picsum.photos/seed/headphones/200/200', category: 'items' },
+                    { id: 2, name: '机械键盘', points: 1200, image: 'https://picsum.photos/seed/keyboard/200/200', category: 'items' },
+                    { id: 3, name: '电子阅读器', points: 2000, image: 'https://picsum.photos/seed/ebook/200/200', category: 'items' },
+                    { id: 4, name: '智能手表', points: 2500, image: 'https://picsum.photos/seed/watch/200/200', category: 'items' },
+                    { id: 5, name: '游戏手柄', points: 800, image: 'https://picsum.photos/seed/controller/200/200', category: 'items' },
+                    { id: 6, name: '笔记本支架', points: 600, image: 'https://picsum.photos/seed/stand/200/200', category: 'items' }
+                ],
+                food: [
+                    { id: 7, name: '豪华晚餐', points: 500, image: 'https://picsum.photos/seed/dinner/200/200', category: 'food' },
+                    { id: 8, name: '精品咖啡', points: 150, image: 'https://picsum.photos/seed/coffee/200/200', category: 'food' },
+                    { id: 9, name: '冰淇淋蛋糕', points: 300, image: 'https://picsum.photos/seed/cake/200/200', category: 'food' },
+                    { id: 10, name: '水果礼盒', points: 250, image: 'https://picsum.photos/seed/fruits/200/200', category: 'food' },
+                    { id: 11, name: '零食大礼包', points: 400, image: 'https://picsum.photos/seed/snacks/200/200', category: 'food' },
+                    { id: 12, name: '奶茶套餐', points: 200, image: 'https://picsum.photos/seed/milktea/200/200', category: 'food' }
+                ],
+                themes: [
+                    { id: 13, name: '蓝色主题', points: 800, image: 'https://picsum.photos/seed/blue/200/200', category: 'themes', themeClass: 'theme-blue' },
+                    { id: 14, name: '绿色主题', points: 800, image: 'https://picsum.photos/seed/green/200/200', category: 'themes', themeClass: 'theme-green' },
+                    { id: 15, name: '紫色主题', points: 1000, image: 'https://picsum.photos/seed/purple/200/200', category: 'themes', themeClass: 'theme-purple' },
+                    { id: 16, name: '黄色主题', points: 900, image: 'https://picsum.photos/seed/yellow/200/200', category: 'themes', themeClass: 'theme-yellow' },
+                    { id: 17, name: '极简主题', points: 1200, image: 'https://picsum.photos/seed/minimal/200/200', category: 'themes', themeClass: 'theme-minimal' },
+                    { id: 18, name: '深色主题', points: 600, image: 'https://picsum.photos/seed/dark/200/200', category: 'themes', themeClass: 'theme-dark' }
+                ],
+                features: [
+                    { id: 19, name: '高级统计', points: 1500, image: 'https://picsum.photos/seed/stats/200/200', category: 'features', feature: 'advancedStats' },
+                    { id: 20, name: '自定义铃声', points: 700, image: 'https://picsum.photos/seed/ringtone/200/200', category: 'features', feature: 'customRingtones' },
+                    { id: 21, name: '任务标签', points: 900, image: 'https://picsum.photos/seed/tags/200/200', category: 'features', feature: 'taskTags' },
+                    { id: 22, name: '云端同步', points: 2000, image: 'https://picsum.photos/seed/cloud/200/200', category: 'features', feature: 'cloudSync' },
+                    { id: 23, name: '专注报告', points: 1300, image: 'https://picsum.photos/seed/report/200/200', category: 'features', feature: 'focusReports' },
+                    { id: 24, name: '高级拦截', points: 1100, image: 'https://picsum.photos/seed/blocker/200/200', category: 'features', feature: 'advancedBlocker' }
+                ],
+                redeemed: []
+            }
+        };
+
+        // DOM 元素
+        const elements = {
+            timerDisplay: document.getElementById('timer-display'),
+            timerStatus: document.getElementById('timer-status'),
+            timerRing: document.getElementById('timer-ring'),
+            startBtn: document.getElementById('start-btn'),
+            resetBtn: document.getElementById('reset-btn'),
+            fullscreenBtn: document.getElementById('fullscreen-btn'),
+            workModeBtn: document.getElementById('work-mode'),
+            breakModeBtn: document.getElementById('break-mode'),
+            workTimeInput: document.getElementById('work-time'),
+            breakTimeInput: document.getElementById('break-time'),
+            completedPomodorosEl: document.getElementById('completed-pomodoros'),
+            focusTimeEl: document.getElementById('focus-time'),
+            interruptionCountEl: document.getElementById('interruption-count'),
+            pomodoroPointsEl: document.getElementById('pomodoro-points'),
+            modalPointsEl: document.getElementById('modal-points'),
+            rewardsBtn: document.getElementById('rewards-btn'),
+            rewardsModal: document.getElementById('rewards-modal'),
+            closeRewardsBtn: document.getElementById('close-rewards'),
+            itemsContainer: document.getElementById('items-container'),
+            foodContainer: document.getElementById('food-container'),
+            themesContainer: document.getElementById('themes-container'),
+            featuresContainer: document.getElementById('features-container'),
+            redeemedContainer: document.getElementById('redeemed-container'),
+            noRedeemedEl: document.getElementById('no-redeemed'),
+            redeemedListEl: document.getElementById('redeemed-list'),
+            successToast: document.getElementById('success-toast'),
+            taskInput: document.getElementById('task-input'),
+            taskSubmit: document.getElementById('task-submit'),
+            taskList: document.getElementById('task-list'),
+            taskCount: document.getElementById('task-count'),
+            clearCompleted: document.getElementById('clear-completed'),
+            interruptionList: document.getElementById('interruption-list'),
+            breathingExercise: document.getElementById('breathing-exercise'),
+            stopBreathing: document.getElementById('stop-breathing'),
+            breathText: document.getElementById('breath-text'),
+            websiteInput: document.getElementById('website-input'),
+            addWebsite: document.getElementById('add-website'),
+            blockedWebsites: document.getElementById('blocked-websites'),
+            blockerActive: document.getElementById('blocker-active'),
+            pomodoroTarget: document.getElementById('pomodoro-target'),
+            pomodoroTargetDisplay: document.getElementById('pomodoro-target-display'),
+            targetProgress: document.getElementById('target-progress'),
+            targetProgressBar: document.getElementById('target-progress-bar'),
+            analyticsBtn: document.getElementById('analytics-btn'),
+            analyticsModal: document.getElementById('analytics-modal'),
+            closeAnalytics: document.getElementById('close-analytics'),
+            settingsBtn: document.getElementById('settings-btn'),
+            settingsModal: document.getElementById('settings-modal'),
+            closeSettings: document.getElementById('close-settings'),
+            themeToggle: document.getElementById('theme-toggle'),
+            soundNotification: document.getElementById('sound-notification'),
+            browserNotification: document.getElementById('browser-notification'),
+            exportData: document.getElementById('export-data'),
+            resetData: document.getElementById('reset-data'),
+            musicPlayer: document.getElementById('music-player'),
+            musicToggle: document.getElementById('music-toggle'),
+            musicTitle: document.getElementById('music-title'),
+            musicProgress: document.getElementById('music-progress'),
+            musicPrev: document.getElementById('music-prev'),
+            musicNext: document.getElementById('music-next'),
+            musicImport: document.getElementById('music-import'),
+            musicImportModal: document.getElementById('music-import-modal'),
+            closeMusicImport: document.getElementById('close-music-import'),
+            customMusicImport: document.getElementById('custom-music-import'),
+            musicImportPreview: document.getElementById('music-import-preview'),
+            confirmMusicImport: document.getElementById('confirm-music-import'),
+            customMusicList: document.getElementById('custom-music-list'),
+            musicEnabled: document.getElementById('music-enabled'),
+            musicVolume: document.getElementById('music-volume'),
+            fileImport: document.getElementById('file-import'),
+            filePreview: document.getElementById('file-preview'),
+            videoImport: document.getElementById('video-import'),
+            videoPreview: document.getElementById('video-preview'),
+            notificationSound: document.getElementById('notification-sound')
+        };
+
+        // 初始化应用
+        function init() {
+            loadData();
+            setupEventListeners();
+            updateUI();
+            updateTimerDisplay();
+            renderTasks();
+            renderBlockedWebsites();
+            updateTargetProgress();
+            renderRewardsStore();
+            updateMusicPlayer();
+            renderImportedFiles();
+            renderImportedVideos();
+            renderCustomMusicList();
+            
+            // 初始化圆环进度
+            const ringRadius = elements.timerRing.r.baseVal.value;
+            const ringCircumference = 2 * Math.PI * ringRadius;
+            elements.timerRing.style.strokeDasharray = ringCircumference;
+            updateRingProgress(1);
+            
+            // 初始化音乐
+            setupMusic();
+            
+            // 检查并应用主题
+            applyTheme();
+        }
+
+        // 设置音乐功能
+        function setupMusic() {
+            // 设置音量
+            updateMusicVolume();
+            
+            // 更新音乐播放器显示
+            updateMusicPlayer();
+            
+            // 设置音乐进度更新
+            setInterval(() => {
+                if (state.music.isPlaying && state.music.tracks.length > 0) {
+                    const currentTrack = state.music.tracks[state.music.currentTrack];
+                    if (currentTrack.audio.duration) {
+                        const progress = (currentTrack.audio.currentTime / currentTrack.audio.duration) * 100;
+                        elements.musicProgress.style.width = `${progress}%`;
+                    }
+                }
+            }, 500);
+        }
+
+        // 更新音乐播放器显示
+        function updateMusicPlayer() {
+            if (state.settings.musicEnabled) {
+                elements.musicPlayer.classList.remove('hidden');
+                if (state.music.tracks.length > 0) {
+                    elements.musicTitle.textContent = state.music.tracks[state.music.currentTrack].name;
+                }
+                
+                if (state.music.isPlaying) {
+                    elements.musicToggle.innerHTML = '<i class="fa fa-pause"></i>';
+                } else {
+                    elements.musicToggle.innerHTML = '<i class="fa fa-play"></i>';
+                }
+            } else {
+                elements.musicPlayer.classList.add('hidden');
+                pauseMusic();
+            }
+        }
+
+        // 切换音乐播放状态
+        function toggleMusic() {
+            if (!state.settings.musicEnabled || state.music.tracks.length === 0) return;
+            
+            if (state.music.isPlaying) {
+                pauseMusic();
+            } else {
+                playMusic();
+            }
+        }
+
+        // 播放音乐
+        function playMusic() {
+            if (state.music.tracks.length === 0) return;
+            
+            state.music.tracks[state.music.currentTrack].audio.play()
+                .then(() => {
+                    state.music.isPlaying = true;
+                    updateMusicPlayer();
+                })
+                .catch(error => {
+                    console.error('播放音乐失败:', error);
+                    // 提示用户可能需要交互才能播放音频
+                    showToast('请点击播放器开始播放音乐');
+                });
+        }
+
+        // 暂停音乐
+        function pauseMusic() {
+            if (state.music.tracks.length === 0) return;
+            
+            state.music.tracks[state.music.currentTrack].audio.pause();
+            state.music.isPlaying = false;
+            updateMusicPlayer();
+        }
+
+        // 下一首音乐
+        function nextMusic() {
+            if (state.music.tracks.length <= 1) return;
+            
+            pauseMusic();
+            state.music.currentTrack = (state.music.currentTrack + 1) % state.music.tracks.length;
+            if (state.music.isPlaying) {
+                playMusic();
+            } else {
+                updateMusicPlayer();
+            }
+        }
+
+        // 上一首音乐
+        function prevMusic() {
+            if (state.music.tracks.length <= 1) return;
+            
+            pauseMusic();
+            state.music.currentTrack = (state.music.currentTrack - 1 + state.music.tracks.length) % state.music.tracks.length;
+            if (state.music.isPlaying) {
+                playMusic();
+            } else {
+                updateMusicPlayer();
+            }
+        }
+
+        // 更新音乐音量
+        function updateMusicVolume() {
+            const volume = state.settings.musicVolume / 100;
+            elements.notificationSound.volume = volume;
+            
+            state.music.tracks.forEach(track => {
+                track.audio.volume = volume;
+            });
+        }
+
+        // 处理音乐导入
+        function handleMusicImport(files) {
+            if (!files || files.length === 0) return;
+            
+            elements.musicImportPreview.innerHTML = '';
+            const newTracks = [];
+            
+            Array.from(files).forEach(file => {
+                if (file.type.startsWith('audio/')) {
+                    const trackId = Date.now() + Math.floor(Math.random() * 1000);
+                    const audioUrl = URL.createObjectURL(file);
+                    const audio = new Audio(audioUrl);
+                    
+                    const track = {
+                        id: trackId,
+                        name: file.name,
+                        audio: audio,
+                        url: audioUrl,
+                        isCustom: true
+                    };
+                    
+                    newTracks.push(track);
+                    
+                    // 显示预览
+                    const previewItem = document.createElement('div');
+                    previewItem.className = 'flex items-center justify-between p-2 bg-gray-50 rounded dark:bg-gray-700';
+                    previewItem.innerHTML = `
+                        <div class="flex items-center">
+                            <i class="fa fa-music text-primary mr-2"></i>
+                            <span class="text-sm truncate max-w-[200px]">${file.name}</span>
+                        </div>
+                        <span class="text-xs text-gray-500">${(file.size / (1024 * 1024)).toFixed(2)} MB</span>
+                    `;
+                    elements.musicImportPreview.appendChild(previewItem);
+                }
+            });
+            
+            if (newTracks.length > 0) {
+                // 保存新导入的音乐
+                state.music.tracks = [...state.music.tracks, ...newTracks];
+                saveData();
+                renderCustomMusicList();
+                
+                // 关闭模态框
+                elements.musicImportModal.classList.add('hidden');
+                
+                // 显示成功提示
+                showToast(`成功导入 ${newTracks.length} 首音乐`);
+            } else {
+                showToast('未找到有效的音频文件');
+            }
+        }
+
+        // 渲染自定义音乐列表
+        function renderCustomMusicList() {
+            const customTracks = state.music.tracks.filter(track => track.isCustom);
+            
+            if (customTracks.length === 0) {
+                elements.customMusicList.innerHTML = '<p class="text-sm text-gray-500 dark:text-gray-400">暂无自定义音乐</p>';
+                return;
+            }
+            
+            elements.customMusicList.innerHTML = '';
+            customTracks.forEach((track, index) => {
+                const trackItem = document.createElement('div');
+                trackItem.className = 'flex items-center justify-between p-2 bg-gray-50 rounded dark:bg-gray-700';
+                trackItem.innerHTML = `
+                    <div class="flex items-center">
+                        <i class="fa fa-music text-primary mr-2"></i>
+                        <span class="text-sm truncate max-w-[180px]">${track.name}</span>
+                    </div>
+                    <button class="delete-music text-gray-500 hover:text-red-500 transition-colors" data-id="${track.id}">
+                        <i class="fa fa-trash"></i>
+                    </button>
+                `;
+                elements.customMusicList.appendChild(trackItem);
+            });
+            
+            // 添加删除事件监听
+            document.querySelectorAll('.delete-music').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const trackId = parseInt(e.currentTarget.dataset.id);
+                    deleteCustomMusic(trackId);
+                });
+            });
+        }
+
+        // 删除自定义音乐
+        function deleteCustomMusic(trackId) {
+            // 停止播放要删除的音乐
+            const trackIndex = state.music.tracks.findIndex(t => t.id === trackId);
+            if (trackIndex === state.music.currentTrack) {
+                pauseMusic();
+            }
+            
+            // 释放URL对象
+            const track = state.music.tracks.find(t => t.id === trackId);
+            if (track && track.url) {
+                URL.revokeObjectURL(track.url);
+            }
+            
+            // 从列表中移除
+            state.music.tracks = state.music.tracks.filter(t => t.id !== trackId);
+            
+            // 如果当前播放的是被删除的音乐，调整当前索引
+            if (trackIndex < state.music.currentTrack) {
+                state.music.currentTrack--;
+            } else if (trackIndex === state.music.currentTrack && state.music.tracks.length > 0) {
+                state.music.currentTrack = 0;
+            }
+            
+            saveData();
+            renderCustomMusicList();
+            updateMusicPlayer();
+            
+            showToast('音乐已删除');
+        }
+
+        // 处理文件导入
+        function handleFileImport(files) {
+            if (!files || files.length === 0) return;
+            
+            Array.from(files).forEach(file => {
+                const fileId = Date.now() + Math.floor(Math.random() * 1000);
+                const fileUrl = URL.createObjectURL(file);
+                
+                const fileData = {
+                    id: fileId,
+                    name: file.name,
+                    type: file.type,
+                    size: file.size,
+                    url: fileUrl,
+                    date: new Date().toISOString()
+                };
+                
+                state.importedFiles.push(fileData);
+            });
+            
+            saveData();
+            renderImportedFiles();
+            showToast(`成功导入 ${files.length} 个文件`);
+        }
+
+        // 渲染导入的文件
+        function renderImportedFiles() {
+            if (state.importedFiles.length === 0) {
+                elements.filePreview.innerHTML = '<p class="text-sm text-gray-500 dark:text-gray-400">暂无导入的文件</p>';
+                return;
+            }
+            
+            elements.filePreview.innerHTML = '';
+            state.importedFiles.forEach(file => {
+                const fileItem = document.createElement('div');
+                fileItem.className = 'flex items-center justify-between p-2 bg-gray-50 rounded dark:bg-gray-700';
+                
+                // 确定文件图标
+                let fileIcon = 'fa-file-o';
+                if (file.type.includes('pdf')) fileIcon = 'fa-file-pdf-o';
+                else if (file.type.includes('word')) fileIcon = 'fa-file-word-o';
+                else if (file.type.includes('excel')) fileIcon = 'fa-file-excel-o';
+                else if (file.type.includes('text')) fileIcon = 'fa-file-text-o';
+                
+                fileItem.innerHTML = `
+                    <div class="flex items-center">
+                        <i class="fa ${fileIcon} text-primary mr-2"></i>
+                        <a href="${file.url}" target="_blank" class="text-sm truncate max-w-[180px] hover:underline">${file.name}</a>
+                    </div>
+                    <button class="delete-file text-gray-500 hover:text-red-500 transition-colors" data-id="${file.id}">
+                        <i class="fa fa-trash"></i>
+                    </button>
+                `;
+                elements.filePreview.appendChild(fileItem);
+            });
+            
+            // 添加删除事件监听
+            document.querySelectorAll('.delete-file').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const fileId = parseInt(e.currentTarget.dataset.id);
+                    deleteImportedFile(fileId);
+                });
+            });
+        }
+
+        // 删除导入的文件
+        function deleteImportedFile(fileId) {
+            // 释放URL对象
+            const file = state.importedFiles.find(f => f.id === fileId);
+            if (file && file.url) {
+                URL.revokeObjectURL(file.url);
+            }
+            
+            // 从列表中移除
+            state.importedFiles = state.importedFiles.filter(f => f.id !== fileId);
+            
+            saveData();
+            renderImportedFiles();
+        }
+
+        // 处理视频导入
+        function handleVideoImport(files) {
+            if (!files || files.length === 0) return;
+            
+            Array.from(files).forEach(file => {
+                const videoId = Date.now() + Math.floor(Math.random() * 1000);
+                const videoUrl = URL.createObjectURL(file);
+                
+                const videoData = {
+                    id: videoId,
+                    name: file.name,
+                    type: file.type,
+                    size: file.size,
+                    url: videoUrl,
+                    date: new Date().toISOString()
+                };
+                
+                state.importedVideos.push(videoData);
+            });
+            
+            saveData();
+            renderImportedVideos();
+            showToast(`成功导入 ${files.length} 个视频`);
+        }
+
+        // 渲染导入的视频
+        function renderImportedVideos() {
+            if (state.importedVideos.length === 0) {
+                elements.videoPreview.innerHTML = '<p class="text-sm text-gray-500 dark:text-gray-400">暂无导入的视频</p>';
+                return;
+            }
+            
+            elements.videoPreview.innerHTML = '';
+            state.importedVideos.forEach(video => {
+                const videoItem = document.createElement('div');
+                videoItem.className = 'flex flex-col p-2 bg-gray-50 rounded dark:bg-gray-700';
+                
+                videoItem.innerHTML = `
+                    <div class="flex items-center justify-between mb-2">
+                        <div class="flex items-center">
+                            <i class="fa fa-film text-primary mr-2"></i>
+                            <span class="text-sm truncate max-w-[180px]">${video.name}</span>
+                        </div>
+                        <button class="delete-video text-gray-500 hover:text-red-500 transition-colors" data-id="${video.id}">
+                            <i class="fa fa-trash"></i>
+                        </button>
+                    </div>
+                    <video src="${video.url}" controls class="w-full h-24 object-contain rounded" preload="metadata"></video>
+                `;
+                elements.videoPreview.appendChild(videoItem);
+            });
+            
+            // 添加删除事件监听
+            document.querySelectorAll('.delete-video').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const videoId = parseInt(e.currentTarget.dataset.id);
+                    deleteImportedVideo(videoId);
+                });
+            });
+        }
+
+        // 删除导入的视频
+        function deleteImportedVideo(videoId) {
+            // 释放URL对象
+            const video = state.importedVideos.find(v => v.id === videoId);
+            if (video && video.url) {
+                URL.revokeObjectURL(video.url);
+            }
+            
+            // 从列表中移除
+            state.importedVideos = state.importedVideos.filter(v => v.id !== videoId);
+            
+            saveData();
+            renderImportedVideos();
+        }
+
+        // 渲染奖励商店
+        function renderRewardsStore() {
+            // 更新积分显示
+            elements.modalPointsEl.textContent = state.pomodoroPoints;
+            
+            // 渲染物品奖励
+            elements.itemsContainer.innerHTML = '';
+            state.rewards.items.forEach(item => {
+                renderRewardItem(item);
+            });
+            
+            // 渲染食物奖励
+            elements.foodContainer.innerHTML = '';
+            state.rewards.food.forEach(item => {
+                renderRewardItem(item);
+            });
+            
+            // 渲染主题奖励
+            elements.themesContainer.innerHTML = '';
+            state.rewards.themes.forEach(item => {
+                renderRewardItem(item);
+            });
+            
+            // 渲染功能奖励
+            elements.featuresContainer.innerHTML = '';
+            state.rewards.features.forEach(item => {
+                renderRewardItem(item);
+            });
+            
+            // 渲染已兑换奖励
+            renderRedeemedRewards();
+        }
+
+        // 渲染单个奖励项
+        function renderRewardItem(item) {
+            const isRedeemed = state.rewards.redeemed.some(r => r.id === item.id);
+            const canRedeem = !isRedeemed && state.pomodoroPoints >= item.points;
+            
+            const rewardEl = document.createElement('div');
+            rewardEl.className = `reward-item rounded-lg overflow-hidden shadow-sm ${isRedeemed ? 'unlocked' : canRedeem ? 'unlocked' : 'locked'}`;
+            rewardEl.dataset.id = item.id;
+            
+            rewardEl.innerHTML = `
+                <img src="${item.image}" alt="${item.name}" class="w-full h-32 object-cover">
+                <div class="p-3 bg-gray-50 dark:bg-gray-700">
+                    <h4 class="font-medium text-sm truncate">${item.name}</h4>
+                    <div class="flex items-center justify-between mt-1">
+                        <span class="text-xs text-primary font-bold">${item.points} 积分</span>
+                        <span class="${isRedeemed ? 'text-green-500' : canRedeem ? 'text-primary' : 'text-gray-400'}">
+                            ${isRedeemed ? '<i class="fa fa-check"></i> 已兑换' : canRedeem ? '<i class="fa fa-gift"></i> 可兑换' : '<i class="fa fa-lock"></i> 锁定'}
+                        </span>
+                    </div>
+                </div>
+            `;
+            
+            // 添加点击事件
+            if (!isRedeemed && canRedeem) {
+                rewardEl.addEventListener('click', () => redeemReward(item));
+            }
+            
+            // 添加到相应的容器
+            const container = document.getElementById(`${item.category}-container`);
+            if (container) {
+                container.appendChild(rewardEl);
+            }
+        }
+
+        // 渲染已兑换的奖励
+        function renderRedeemedRewards() {
+            if (state.rewards.redeemed.length === 0) {
+                elements.noRedeemedEl.classList.remove('hidden');
+                elements.redeemedListEl.classList.add('hidden');
+                return;
+            }
+            
+            elements.noRedeemedEl.classList.add('hidden');
+            elements.redeemedListEl.classList.remove('hidden');
+            elements.redeemedListEl.innerHTML = '';
+            
+            state.rewards.redeemed.forEach(reward => {
+                // 找到完整的奖励信息
+                const allRewards = [
+                    ...state.rewards.items,
+                    ...state.rewards.food,
+                    ...state.rewards.themes,
+                    ...state.rewards.features
+                ];
+                const rewardData = allRewards.find(r => r.id === reward.id);
+                
+                if (rewardData) {
+                    const redeemedEl = document.createElement('div');
+                    redeemedEl.className = 'flex items-center justify-between p-2 bg-white rounded dark:bg-gray-600';
+                    redeemedEl.innerHTML = `
+                        <div class="flex items-center">
+                            <img src="${rewardData.image}" alt="${rewardData.name}" class="w-8 h-8 rounded object-cover mr-2">
+                            <span class="text-sm">${rewardData.name}</span>
+                        </div>
+                        <span class="text-xs text-gray-500">${new Date(reward.date).toLocaleDateString()}</span>
+                    `;
+                    elements.redeemedListEl.appendChild(redeemedEl);
+                }
+            });
+        }
+
+        // 兑换奖励
+        function redeemReward(reward) {
+            if (state.pomodoroPoints < reward.points) return;
+            
+            // 扣除积分
+            state.pomodoroPoints -= reward.points;
+            
+            // 添加到已兑换列表
+            state.rewards.redeemed.push({
+                id: reward.id,
+                date: new Date().toISOString()
+            });
+            
+            // 处理特殊类型奖励
+            if (reward.category === 'themes' && reward.themeClass) {
+                // 应用主题
+                state.settings.theme = reward.themeClass;
+                applyTheme();
+            }
+            
+            if (reward.category === 'features' && reward.feature) {
+                // 解锁功能（这里只是示例，实际应用中需要实现相应功能）
+                showToast(`已解锁 ${reward.name} 功能！`);
+            }
+            
+            saveData();
+            renderRewardsStore();
+            updateUI();
+            
+            // 显示成功提示
+            showToast(`成功兑换 ${reward.name}！`);
+        }
+
+        // 应用主题
+        function applyTheme() {
+            // 移除所有主题类
+            document.body.classList.remove('theme-blue', 'theme-green', 'theme-purple', 'theme-yellow', 'theme-minimal', 'theme-dark');
+            
+            // 应用当前主题
+            if (state.settings.theme && state.settings.theme !== 'default') {
+                document.body.classList.add(state.settings.theme);
+            }
+        }
+
+        // 更新圆环进度
+        function updateRingProgress(progress) {
+            const ringRadius = elements.timerRing.r.baseVal.value;
+            const ringCircumference = 2 * Math.PI * ringRadius;
+            const offset = ringCircumference * (1 - progress);
+            elements.timerRing.style.strokeDashoffset = offset;
+            
+            // 根据模式更改颜色
+            if (state.isWorkMode) {
+                elements.timerRing.setAttribute('stroke', '#B52B2D');
+            } else {
+                elements.timerRing.setAttribute('stroke', '#10b981');
+            }
+        }
+
+        // 更新计时器显示
+        function updateTimerDisplay() {
+            const minutes = Math.floor(state.timeLeft / 60);
+            const seconds = state.timeLeft % 60;
+            elements.timerDisplay.textContent = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+            
+            // 更新进度环
+            const totalTime = state.isWorkMode ? state.workTime : state.breakTime;
+            const progress = state.timeLeft / totalTime;
+            updateRingProgress(progress);
+            
+            // 更新状态文本
+            if (state.isWorkMode) {
+                elements.timerStatus.textContent = state.isRunning ? '专注工作中...' : '准备开始工作';
+            } else {
+                elements.timerStatus.textContent = state.isRunning ? '放松休息中...' : '准备开始休息';
+            }
+        }
+
+        // 切换计时器状态
+        function toggleTimer() {
+            if (state.isRunning) {
+                pauseTimer();
+            } else {
+                startTimer();
+            }
+        }
+
+        // 开始计时器
+        function startTimer() {
+            if (state.isRunning) return;
+            
+            state.isRunning = true;
+            elements.startBtn.innerHTML = '<i class="fa fa-pause mr-2"></i> 暂停';
+            
+            // 如果启用了音乐，开始播放
+            if (state.settings.musicEnabled && !state.music.isPlaying) {
+                playMusic();
+            }
+            
+            state.timer = setInterval(() => {
+                state.timeLeft--;
+                updateTimerDisplay();
+                
+                if (state.timeLeft <= 0) {
+                    completeTimer();
+                }
+            }, 1000);
+        }
+
+        // 暂停计时器
+        function pauseTimer() {
+            if (!state.isRunning) return;
+            
+            state.isRunning = false;
+            elements.startBtn.innerHTML = '<i class="fa fa-play mr-2"></i> 开始';
+            clearInterval(state.timer);
+        }
+
+        // 重置计时器
+        function resetTimer() {
+            pauseTimer();
+            state.timeLeft = state.isWorkMode ? state.workTime : state.breakTime;
+            updateTimerDisplay();
+        }
+
+        // 完成计时器
+        function completeTimer() {
+            pauseTimer();
+            
+            // 播放提示音
+            if (state.settings.soundNotification) {
+                elements.notificationSound.play();
+            }
+            
+            // 显示浏览器通知
+            if (state.settings.browserNotification && Notification.permission === 'granted') {
+                new Notification(state.isWorkMode ? '工作时间结束！' : '休息时间结束！', {
+                    body: state.isWorkMode ? '是时候休息一下了' : '准备开始新的工作时段',
+                    icon: 'https://cdn-icons-png.flaticon.com/512/2922/2922510.png'
+                });
+            }
+            
+            // 如果是工作模式完成，增加番茄计数和积分
+            if (state.isWorkMode) {
+                state.completedPomodoros++;
+                state.focusTime += state.workTime / 60;
+                state.pomodoroPoints += 10; // 每个番茄奖励10积分
+                updateTargetProgress();
+            }
+            
+            // 切换模式
+            toggleMode();
+            
+            // 自动开始下一个模式
+            startTimer();
+            
+            saveData();
+            updateUI();
+        }
+
+        // 切换工作/休息模式
+        function toggleMode() {
+            state.isWorkMode = !state.isWorkMode;
+            state.timeLeft = state.isWorkMode ? state.workTime : state.breakTime;
+            
+            // 更新按钮样式
+            if (state.isWorkMode) {
+                elements.workModeBtn.classList.add('bg-primary', 'text-white');
+                elements.workModeBtn.classList.remove('text-gray-700', 'dark:text-gray-300', 'hover:bg-gray-200', 'dark:hover:bg-gray-600');
+                elements.breakModeBtn.classList.remove('bg-primary', 'text-white');
+                elements.breakModeBtn.classList.add('text-gray-700', 'dark:text-gray-300', 'hover:bg-gray-200', 'dark:hover:bg-gray-600');
+            } else {
+                elements.breakModeBtn.classList.add('bg-primary', 'text-white');
+                elements.breakModeBtn.classList.remove('text-gray-700', 'dark:text-gray-300', 'hover:bg-gray-200', 'dark:hover:bg-gray-600');
+                elements.workModeBtn.classList.remove('bg-primary', 'text-white');
+                elements.workModeBtn.classList.add('text-gray-700', 'dark:text-gray-300', 'hover:bg-gray-200', 'dark:hover:bg-gray-600');
+            }
+            
+            updateTimerDisplay();
+        }
+
+        // 添加任务
+        function addTask(text) {
+            if (!text.trim()) return;
+            
+            const task = {
+                id: Date.now(),
+                text: text.trim(),
+                completed: false,
+                createdAt: new Date().toISOString()
+            };
+            
+            state.tasks.push(task);
+            saveData();
+            renderTasks();
+            
+            // 清空输入框
+            elements.taskInput.value = '';
+        }
+
+        // 渲染任务列表
+        function renderTasks() {
+            if (state.tasks.length === 0) {
+                elements.taskList.innerHTML = '<p class="text-gray-500 text-center py-4 dark:text-gray-400">暂无任务，添加一个吧！</p>';
+                elements.taskCount.textContent = '0 个任务';
+                return;
+            }
+            
+            elements.taskList.innerHTML = '';
+            state.tasks.forEach(task => {
+                const taskEl = document.createElement('div');
+                taskEl.className = `flex items-center justify-between p-3 bg-gray-50 rounded-lg dark:bg-gray-700 ${task.completed ? 'task-completed' : ''} transition-all`;
+                taskEl.innerHTML = `
+                    <div class="flex items-center flex-1">
+                        <input type="checkbox" class="task-checkbox mr-3 h-4 w-4 text-primary rounded" ${task.completed ? 'checked' : ''} data-id="${task.id}">
+                        <span class="flex-1 break-words">${task.text}</span>
+                    </div>
+                    <button class="delete-task text-gray-400 hover:text-red-500 transition-colors" data-id="${task.id}">
+                        <i class="fa fa-trash"></i>
+                    </button>
+                `;
+                elements.taskList.appendChild(taskEl);
+            });
+            
+            // 更新任务计数
+            const completedCount = state.tasks.filter(t => t.completed).length;
+            elements.taskCount.textContent = `${state.tasks.length} 个任务 (${completedCount} 个已完成)`;
+            
+            // 添加事件监听
+            document.querySelectorAll('.task-checkbox').forEach(checkbox => {
+                checkbox.addEventListener('change', (e) => {
+                    toggleTaskCompletion(parseInt(e.target.dataset.id));
+                });
+            });
+            
+            document.querySelectorAll('.delete-task').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    deleteTask(parseInt(e.target.closest('.delete-task').dataset.id));
+                });
+            });
+        }
+
+        // 切换任务完成状态
+        function toggleTaskCompletion(taskId) {
+            const task = state.tasks.find(t => t.id === taskId);
+            if (task) {
+                task.completed = !task.completed;
+                saveData();
+                renderTasks();
+            }
+        }
+
+        // 删除任务
+        function deleteTask(taskId) {
+            state.tasks = state.tasks.filter(t => t.id !== taskId);
+            saveData();
+            renderTasks();
+        }
+
+        // 清除已完成任务
+        function clearCompletedTasks() {
+            state.tasks = state.tasks.filter(t => !t.completed);
+            saveData();
+            renderTasks();
+        }
+
+        // 添加打断记录
+        function addInterruption(reason) {
+            const interruption = {
+                id: Date.now(),
+                reason: reason,
+                time: new Date().toISOString()
+            };
+            
+            state.interruptions.push(interruption);
+            saveData();
+            renderInterruptions();
+        }
+
+        // 渲染打断记录
+        function renderInterruptions() {
+            if (state.interruptions.length === 0) {
+                elements.interruptionList.innerHTML = '<p class="text-gray-500 text-center py-2 dark:text-gray-400">暂无打断记录</p>';
+                elements.interruptionCountEl.textContent = '0';
+                return;
+            }
+            
+            elements.interruptionList.innerHTML = '';
+            state.interruptions.slice().reverse().forEach(int => {
+                const time = new Date(int.time);
+                const timeStr = `${time.getHours().toString().padStart(2, '0')}:${time.getMinutes().toString().padStart(2, '0')}`;
+                
+                const intEl = document.createElement('div');
+                intEl.className = 'flex items-center justify-between py-1 border-b border-gray-100 dark:border-gray-600 last:border-0';
+                intEl.innerHTML = `
+                    <span>${int.reason}</span>
+                    <span class="text-xs text-gray-500">${timeStr}</span>
+                `;
+                elements.interruptionList.appendChild(intEl);
+            });
+            
+            // 更新打断计数
+            elements.interruptionCountEl.textContent = state.interruptions.length;
+        }
+
+        // 添加拦截网站
+        function addBlockedWebsite(url) {
+            if (!url.trim()) return;
+            
+            // 简单处理URL，提取域名
+            let domain = url.trim();
+            if (domain.startsWith('http://') || domain.startsWith('https://')) {
+                domain = new URL(domain).hostname;
+            }
+            
+            // 检查是否已存在
+            if (state.blockedWebsites.includes(domain)) return;
+            
+            state.blockedWebsites.push(domain);
+            saveData();
+            renderBlockedWebsites();
+            
+            // 清空输入框
+            elements.websiteInput.value = '';
+        }
+
+        // 渲染拦截网站列表
+        function renderBlockedWebsites() {
+            if (state.blockedWebsites.length === 0) {
+                elements.blockedWebsites.innerHTML = '<p class="text-gray-500 text-center py-2 dark:text-gray-400">暂无拦截网站</p>';
+                return;
+            }
+            
+            elements.blockedWebsites.innerHTML = '';
+            state.blockedWebsites.forEach(website => {
+                const siteEl = document.createElement('div');
+                siteEl.className = 'flex items-center justify-between p-2 bg-gray-50 rounded dark:bg-gray-700';
+                siteEl.innerHTML = `
+                    <div class="flex items-center">
+                        <i class="fa fa-ban text-red-500 mr-2"></i>
+                        <span class="text-sm">${website}</span>
+                    </div>
+                    <button class="delete-website text-gray-400 hover:text-red-500 transition-colors" data-site="${website}">
+                        <i class="fa fa-trash"></i>
+                    </button>
+                `;
+                elements.blockedWebsites.appendChild(siteEl);
+            });
+            
+            // 添加删除事件监听
+            document.querySelectorAll('.delete-website').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    const site = e.target.closest('.delete-website').dataset.site;
+                    deleteBlockedWebsite(site);
+                });
+            });
+        }
+
+        // 删除拦截网站
+        function deleteBlockedWebsite(site) {
+            state.blockedWebsites = state.blockedWebsites.filter(s => s !== site);
+            saveData();
+            renderBlockedWebsites();
+        }
+
+        // 更新目标进度
+        function updateTargetProgress() {
+            const progress = (state.completedPomodoros / state.dailyTarget) * 100;
+            elements.targetProgressBar.style.width = `${Math.min(progress, 100)}%`;
+            elements.targetProgress.textContent = `${state.completedPomodoros}/${state.dailyTarget}`;
+        }
+
+        // 更新UI显示
+        function updateUI() {
+            elements.completedPomodorosEl.textContent = state.completedPomodoros;
+            elements.focusTimeEl.textContent = `${Math.floor(state.focusTime)}分钟`;
+            elements.interruptionCountEl.textContent = state.interruptions.length;
+            elements.pomodoroPointsEl.textContent = state.pomodoroPoints;
+            elements.modalPointsEl.textContent = state.pomodoroPoints;
+            
+            // 更新深色模式
+            if (state.settings.darkMode) {
+                document.body.classList.add('dark-mode');
+                elements.themeToggle.innerHTML = '<i class="fa fa-sun-o"></i>';
+            } else {
+                document.body.classList.remove('dark-mode');
+                elements.themeToggle.innerHTML = '<i class="fa fa-moon-o"></i>';
+            }
+            
+            // 更新设置表单
+            elements.soundNotification.checked = state.settings.soundNotification;
+            elements.browserNotification.checked = state.settings.browserNotification;
+            elements.musicEnabled.checked = state.settings.musicEnabled;
+            elements.musicVolume.value = state.settings.musicVolume;
+            elements.pomodoroTarget.value = state.dailyTarget;
+            elements.pomodoroTargetDisplay.textContent = state.dailyTarget;
+            elements.workTimeInput.value = Math.floor(state.workTime / 60);
+            elements.breakTimeInput.value = Math.floor(state.breakTime / 60);
+            elements.blockerActive.checked = state.isBlockerActive;
+            
+            renderInterruptions();
+        }
+
+        // 显示提示信息
+        function showToast(message) {
+            const toast = elements.successToast;
+            toast.querySelector('span').textContent = message;
+            toast.classList.remove('hidden');
+            
+            setTimeout(() => {
+                toast.classList.add('hidden');
+            }, 3000);
+        }
+
+        // 保存数据到本地存储
+        function saveData() {
+            // 对于音频对象，我们只保存ID和基本信息，不保存完整的audio对象
+            const musicTracksToSave = state.music.tracks.map(track => ({
+                id: track.id,
+                name: track.name,
+                isCustom: track.isCustom,
+                url: track.url // 只对自定义音乐保存URL
+            }));
+            
+            const dataToSave = {
+                ...state,
+                music: {
+                    ...state.music,
+                    tracks: musicTracksToSave
+                }
+            };
+            
+            localStorage.setItem('pomodoroAppData', JSON.stringify(dataToSave));
+        }
+
+        // 从本地存储加载数据
+        function loadData() {
+            const savedData = localStorage.getItem('pomodoroAppData');
+            if (savedData) {
+                const parsedData = JSON.parse(savedData);
+                
+                // 恢复基本状态
+                Object.assign(state, parsedData);
+                
+                // 恢复音乐轨道的audio对象
+                if (parsedData.music && parsedData.music.tracks) {
+                    state.music.tracks = parsedData.music.tracks.map(track => {
+                        // 对于默认音乐，使用已有的audio元素
+                        if (!track.isCustom) {
+                            const existingAudio = track.id === 1 
+                                ? document.getElementById('background-music')
+                                : document.getElementById('background-music-2');
+                            return {
+                                ...track,
+                                audio: existingAudio
+                            };
+                        } 
+                        // 对于自定义音乐，创建新的audio元素
+                        else {
+                            const audio = new Audio(track.url);
+                            return {
+                                ...track,
+                                audio: audio
+                            };
+                        }
+                    });
+                }
+                
+                // 请求通知权限
+                if (state.settings.browserNotification && Notification.permission !== 'granted') {
+                    Notification.requestPermission();
+                }
+            }
+        }
+
+        // 设置事件监听器
+        function setupEventListeners() {
+            // 计时器控制
+            elements.startBtn.addEventListener('click', toggleTimer);
+            elements.resetBtn.addEventListener('click', resetTimer);
+            elements.fullscreenBtn.addEventListener('click', () => {
+                if (!document.fullscreenElement) {
+                    document.documentElement.requestFullscreen().catch(err => {
+                        showToast(`全屏模式错误: ${err.message}`);
+                    });
+                } else {
+                    if (document.exitFullscreen) {
+                        document.exitFullscreen();
+                    }
+                }
+            });
+            
+            // 模式切换
+            elements.workModeBtn.addEventListener('click', () => {
+                if (!state.isWorkMode) {
+                    toggleMode();
+                }
+            });
+            elements.breakModeBtn.addEventListener('click', () => {
+                if (state.isWorkMode) {
+                    toggleMode();
+                }
+            });
+            
+            // 任务管理
+            elements.taskSubmit.addEventListener('click', () => {
+                addTask(elements.taskInput.value);
+            });
+            elements.taskInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    addTask(elements.taskInput.value);
+                }
+            });
+            elements.clearCompleted.addEventListener('click', clearCompletedTasks);
+            
+            // 打断记录
+            document.querySelectorAll('.interruption-reason').forEach(btn => {
+                btn.addEventListener('click', (e) => {
+                    addInterruption(e.target.dataset.reason);
+                });
+            });
+            
+            // 呼吸练习
+            elements.stopBreathing.addEventListener('click', () => {
+                elements.breathingExercise.classList.add('hidden');
+            });
+            
+            // 网站拦截
+            elements.addWebsite.addEventListener('click', () => {
+                addBlockedWebsite(elements.websiteInput.value);
+            });
+            elements.websiteInput.addEventListener('keypress', (e) => {
+                if (e.key === 'Enter') {
+                    addBlockedWebsite(elements.websiteInput.value);
+                }
+            });
+            elements.blockerActive.addEventListener('change', (e) => {
+                state.isBlockerActive = e.target.checked;
+                saveData();
+            });
+            
+            // 目标设置
+            elements.pomodoroTarget.addEventListener('input', (e) => {
+                state.dailyTarget = parseInt(e.target.value);
+                elements.pomodoroTargetDisplay.textContent = state.dailyTarget;
+                updateTargetProgress();
+                saveData();
+            });
+            
+            // 时间设置
+            elements.workTimeInput.addEventListener('change', (e) => {
+                const minutes = parseInt(e.target.value);
+                if (minutes >= 1 && minutes <= 60) {
+                    state.workTime = minutes * 60;
+                    if (state.isWorkMode) {
+                        state.timeLeft = state.workTime;
+                        updateTimerDisplay();
+                    }
+                    saveData();
+                }
+            });
+            
+            elements.breakTimeInput.addEventListener('change', (e) => {
+                const minutes = parseInt(e.target.value);
+                if (minutes >= 1 && minutes <= 30) {
+                    state.breakTime = minutes * 60;
+                    if (!state.isWorkMode) {
+                        state.timeLeft = state.breakTime;
+                        updateTimerDisplay();
+                    }
+                    saveData();
+                }
+            });
+            
+            // 数据分析模态框
+            elements.analyticsBtn.addEventListener('click', () => {
+                elements.analyticsModal.classList.remove('hidden');
+            });
+            elements.closeAnalytics.addEventListener('click', () => {
+                elements.analyticsModal.classList.add('hidden');
+            });
+            
+            // 设置模态框
+            elements.settingsBtn.addEventListener('click', () => {
+                elements.settingsModal.classList.remove('hidden');
+            });
+            elements.closeSettings.addEventListener('click', () => {
+                elements.settingsModal.classList.add('hidden');
+            });
+            
+            // 奖励商店模态框
+            elements.rewardsBtn.addEventListener('click', () => {
+                elements.rewardsModal.classList.remove('hidden');
+            });
+            elements.closeRewardsBtn.addEventListener('click', () => {
+                elements.rewardsModal.classList.add('hidden');
+            });
+            
+            // 音乐导入模态框
+            elements.musicImport.addEventListener('click', () => {
+                elements.musicImportModal.classList.remove('hidden');
+                elements.musicImportPreview.innerHTML = '<p class="text-sm text-gray-500 dark:text-gray-400">未选择文件</p>';
+            });
+            elements.closeMusicImport.addEventListener('click', () => {
+                elements.musicImportModal.classList.add('hidden');
+            });
+            
+            // 音乐导入处理
+            elements.customMusicImport.addEventListener('change', (e) => {
+                handleMusicImport(e.target.files);
+            });
+            elements.confirmMusicImport.addEventListener('click', () => {
+                // 已经在文件选择时处理了导入，这里只是关闭模态框
+                elements.musicImportModal.classList.add('hidden');
+            });
+            
+            // 音乐控制
+            elements.musicToggle.addEventListener('click', toggleMusic);
+            elements.musicNext.addEventListener('click', nextMusic);
+            elements.musicPrev.addEventListener('click', prevMusic);
+            
+            // 文件导入
+            elements.fileImport.addEventListener('change', (e) => {
+                handleFileImport(e.target.files);
+            });
+            
+            // 视频导入
+            elements.videoImport.addEventListener('change', (e) => {
+                handleVideoImport(e.target.files);
+            });
+            
+            // 设置选项
+            elements.themeToggle.addEventListener('click', () => {
+                state.settings.darkMode = !state.settings.darkMode;
+                saveData();
+                updateUI();
+            });
+            
+            elements.soundNotification.addEventListener('change', (e) => {
+                state.settings.soundNotification = e.target.checked;
+                saveData();
+            });
+            
+            elements.browserNotification.addEventListener('change', (e) => {
+                state.settings.browserNotification = e.target.checked;
+                if (e.target.checked && Notification.permission !== 'granted') {
+                    Notification.requestPermission();
+                }
+                saveData();
+            });
+            
+            elements.musicEnabled.addEventListener('change', (e) => {
+                state.settings.musicEnabled = e.target.checked;
+                updateMusicPlayer();
+                saveData();
+            });
+            
+            elements.musicVolume.addEventListener('input', (e) => {
+                state.settings.musicVolume = parseInt(e.target.value);
+                updateMusicVolume();
+                saveData();
+            });
+            
+            elements.exportData.addEventListener('click', () => {
+                const dataStr = JSON.stringify(state, null, 2);
+                const dataUri = 'data:application/json;charset=utf-8,'+ encodeURIComponent(dataStr);
+                
+                const exportFileDefaultName = `pomodoro-data-${new Date().toISOString().slice(0,10)}.json`;
+                
+                const linkElement = document.createElement('a');
+                linkElement.setAttribute('href', dataUri);
+                linkElement.setAttribute('download', exportFileDefaultName);
+                linkElement.click();
+            });
+            
+            elements.resetData.addEventListener('click', () => {
+                if (confirm('确定要重置所有数据吗？此操作不可恢复！')) {
+                    // 清除本地存储
+                    localStorage.removeItem('pomodoroAppData');
+                    
+                    // 重置所有音频URL
+                    state.music.tracks.forEach(track => {
+                        if (track.url && track.isCustom) {
+                            URL.revokeObjectURL(track.url);
+                        }
+                    });
+                    
+                    // 重置状态为初始值
+                    Object.assign(state, {
+                        timer: null,
+                        isRunning: false,
+                        isWorkMode: true,
+                        timeLeft: 25 * 60,
+                        workTime: 25 * 60,
+                        breakTime: 5 * 60,
+                        completedPomodoros: 0,
+                        focusTime: 0,
+                        pomodoroPoints: 0,
+                        interruptions: [],
+                        tasks: [],
+                        blockedWebsites: [],
+                        importedFiles: [],
+                        importedVideos: [],
+                        isBlockerActive: false,
+                        dailyTarget: 8,
+                        currentStreak: 0,
+                        settings: {
+                            soundNotification: true,
+                            browserNotification: false,
+                            darkMode: false,
+                            theme: 'default',
+                            musicEnabled: false,
+                            musicVolume: 50
+                        },
+                        music: {
+                            currentTrack: 0,
+                            isPlaying: false,
+                            tracks: [
+                                { id: 1, name: '轻音乐1', audio: document.getElementById('background-music'), isCustom: false },
+                                { id: 2, name: '轻音乐2', audio: document.getElementById('background-music-2'), isCustom: false }
+                            ]
+                        },
+                        rewards: {
+                            items: state.rewards.items,
+                            food: state.rewards.food,
+                            themes: state.rewards.themes,
+                            features: state.rewards.features,
+                            redeemed: []
+                        }
+                    });
+                    
+                    // 重新初始化UI
+                    pauseTimer();
+                    updateUI();
+                    updateTimerDisplay();
+                    renderTasks();
+                    renderBlockedWebsites();
+                    updateTargetProgress();
+                    renderRewardsStore();
+                    updateMusicPlayer();
+                    renderImportedFiles();
+                    renderImportedVideos();
+                    renderCustomMusicList();
+                    
+                    showToast('所有数据已重置');
+                }
+            });
+            
+            // 快捷键支持
+            document.addEventListener('keydown', (e) => {
+                // 避免在输入框中触发快捷键
+                if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') {
+                    return;
+                }
+                
+                switch(e.key) {
+                    case ' ': // 空格键
+                        e.preventDefault();
+                        toggleTimer();
+                        break;
+                    case 'r':
+                    case 'R':
+                        resetTimer();
+                        break;
+                    case 'w':
+                    case 'W':
+                        if (!state.isWorkMode) {
+                            toggleMode();
+                        }
+                        break;
+                    case 'b':
+                    case 'B':
+                        if (state.isWorkMode) {
+                            toggleMode();
+                        }
+                        break;
+                }
+            });
+            
+            // 拖放文件处理
+            const fileDropArea = elements.fileImport.closest('label');
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                fileDropArea.addEventListener(eventName, preventDefaults, false);
+            });
+            
+            function preventDefaults(e) {
+                e.preventDefault();
+                e.stopPropagation();
+            }
+            
+            ['dragenter', 'dragover'].forEach(eventName => {
+                fileDropArea.addEventListener(eventName, highlight, false);
+            });
+            
+            ['dragleave', 'drop'].forEach(eventName => {
+                fileDropArea.addEventListener(eventName, unhighlight, false);
+            });
+            
+            function highlight() {
+                fileDropArea.classList.add('border-primary', 'bg-primary/5');
+            }
+            
+            function unhighlight() {
+                fileDropArea.classList.remove('border-primary', 'bg-primary/5');
+            }
+            
+            fileDropArea.addEventListener('drop', handleFileDrop, false);
+            
+            function handleFileDrop(e) {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                handleFileImport(files);
+            }
+            
+            // 视频拖放处理
+            const videoDropArea = elements.videoImport.closest('label');
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                videoDropArea.addEventListener(eventName, preventDefaults, false);
+            });
+            
+            ['dragenter', 'dragover'].forEach(eventName => {
+                videoDropArea.addEventListener(eventName, highlightVideo, false);
+            });
+            
+            ['dragleave', 'drop'].forEach(eventName => {
+                videoDropArea.addEventListener(eventName, unhighlightVideo, false);
+            });
+            
+            function highlightVideo() {
+                videoDropArea.classList.add('border-primary', 'bg-primary/5');
+            }
+            
+            function unhighlightVideo() {
+                videoDropArea.classList.remove('border-primary', 'bg-primary/5');
+            }
+            
+            videoDropArea.addEventListener('drop', handleVideoDrop, false);
+            
+            function handleVideoDrop(e) {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                handleVideoImport(files);
+            }
+            
+            // 音乐拖放处理
+            const musicDropArea = elements.customMusicImport.closest('label');
+            ['dragenter', 'dragover', 'dragleave', 'drop'].forEach(eventName => {
+                musicDropArea.addEventListener(eventName, preventDefaults, false);
+            });
+            
+            ['dragenter', 'dragover'].forEach(eventName => {
+                musicDropArea.addEventListener(eventName, highlightMusic, false);
+            });
+            
+            ['dragleave', 'drop'].forEach(eventName => {
+                musicDropArea.addEventListener(eventName, unhighlightMusic, false);
+            });
+            
+            function highlightMusic() {
+                musicDropArea.classList.add('border-primary', 'bg-primary/5');
+            }
+            
+            function unhighlightMusic() {
+                musicDropArea.classList.remove('border-primary', 'bg-primary/5');
+            }
+            
+            musicDropArea.addEventListener('drop', handleMusicDrop, false);
+            
+            function handleMusicDrop(e) {
+                const dt = e.dataTransfer;
+                const files = dt.files;
+                handleMusicImport(files);
+            }
+        }
+
+        // 初始化应用
+        document.addEventListener('DOMContentLoaded', init);
+    </script>
+</body>
+</html>
